@@ -10,16 +10,6 @@
 # set -x
 
 
-# TODOs:
-
-# * -non-interactive
-#   * to eventually run this at startup
-# * ENV var overwriting
-# * stopping the webcam mode
-# * allow resolution, narrow/wide viewmodes see -> https://github.com/KonradIT/goprowifihack/blob/f455675f4f8334d0fd5e6da976d857aa434a9fb0/HERO9/GoPro-Connect.md
-# * option to do a preview with: vlc -vvv --network-caching=300 --sout-x264-preset=ultrafast --sout-x264-tune=zerolatency --sout-x264-vbv-bufsize 0 --sout-transcode-threads 4 --no-audio udp://@:8554
-# * README with credits to KonradIT
-# * update various stackoverflows and posts
 
 
 deps=( "ffmpeg" )
