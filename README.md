@@ -1,4 +1,4 @@
-# Use your GoPro as a webcam on Linux
+# Use your GoPro as a webcam on Linux (without additional hardware)
 > Currently there is no official support for using your GoPro 8&9 (the only versions that offer this feature natively) as a webcam on Linux. The web is full of incomplete tutorials for this topic. This script tries to simplify this effort.
 
 * Please not that this was only tested with the GoPro 8 on Ubuntu 20.04. 
@@ -22,6 +22,7 @@ For the sake of comfort, you can run this command.
 ```sh
 sudo su -c "bash <(wget -qO- https://bit.ly/2MHC6LF)" root
 ```
+
 
 ## Todo:
 
