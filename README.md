@@ -20,7 +20,7 @@ The next command invokes the `prepare_webcam.sh` script in this repository. Feel
 For the sake of comfort, you can run this command.
 
 ```sh
-sudo su -c "bash <(wget -qO- https://bit.ly/2MHC6LF)" root
+sudo su -c "bash <(wget -qO- https://bit.ly/35wtnTl)" root
 ```
 
 
@@ -47,4 +47,3 @@ Credits go to https://github.com/KonradIT for a comprehensive documentation and 
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
 5. Create a new Pull Request
-
