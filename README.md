@@ -85,6 +85,8 @@ Use the provided ip '172.27.187.52' and automatically start an ffmpeg to expose 
 
 It's rather annoying to start this script every time you start up your PC. This is why I provided an example `service` file in this repository.
 
+**Note that the GoPro needs to be plugged in and be in 'standby' mode (Charger symbol) when the computer boots**
+
 
 ```
 [Unit]
