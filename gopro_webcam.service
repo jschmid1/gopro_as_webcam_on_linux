@@ -1,0 +1,12 @@
+[Unit]
+Description=GoPro Webcam start script
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
+
+[Service]
+ExecStart=/usr/local/sbin/gopro webcam -p enx -a -n
+Restart=on-failure
+RestartSec=15s
+
+[Install]
+WantedBy=multi-user.target
