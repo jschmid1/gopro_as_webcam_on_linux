@@ -5,7 +5,7 @@
 ## Installation
 
 ```sh
-sudo su -c "bash <(wget -qO- https://cutt.ly/3jNgdbS)" root
+sudo su -c "bash <(wget -qO- https://cutt.ly/PjNkrzq)" root
 ```
 
 This runs an install script. Follow the instructions on the screen.
