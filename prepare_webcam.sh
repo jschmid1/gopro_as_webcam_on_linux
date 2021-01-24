@@ -11,6 +11,24 @@
 
 
 
+cat << EOF
+Leaving this here to maintain backwards compatibility to any users who may just do a backwards search in their history to re-run this script.
+
+Just FYI, there is a new version of the script with more functionality, including:
+
+* Provide a device pattern for which look for
+* Provide a device directly
+* Provide an IP
+* Auto-start and Preview mode.
+* and more..
+
+All of these features will hopefully simplify using a GoPro as a camera in the day-to-day life by allowing it to run automated in a start-up script.
+
+If you wish to use the new version just check the Github repository. The README should be updated.
+EOF
+
+
+
 
 deps=( "ffmpeg" )
 module="v4l2loopback"
