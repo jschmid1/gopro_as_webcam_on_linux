@@ -24,7 +24,7 @@ if [ $EUID -ne 0 ]; then
     exit 1
 fi
 
-install -D ./gopro /usr/loval/sbin/gopro
+install -D ./gopro /usr/local/sbin/gopro
 
 yellow "**********************"
 printf "\n\n"
