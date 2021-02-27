@@ -248,7 +248,7 @@ function discover_device {
         echo "I can only make an uneducated guess wrt the name of the interface that the GoPro exposes."
         echo "For me the name of the interface is 'enxf64854ee7472'. This script will try to discover the device"
         echo "that was added *last*, as you just plugged in the camera, hence the interface added last should be the one we're looking for."
-        dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | xargs)
+        dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | head -1 | xargs)
 
     else
         echo "Using provided device pattern ${GOPRO_DEVICE_PATTERN}"
