@@ -6,7 +6,7 @@
 #Email         	:jxs@posteo.de
 ###################################################################
 
-VERSION=0.0.2
+VERSION=0.0.3
 
 red() {
     echo -e "\e[31m${1}\e[0m"
@@ -248,7 +248,7 @@ function discover_device {
         echo "I can only make an uneducated guess wrt the name of the interface that the GoPro exposes."
         echo "For me the name of the interface is 'enxf64854ee7472'. This script will try to discover the device"
         echo "that was added *last*, as you just plugged in the camera, hence the interface added last should be the one we're looking for."
-        dev=$(ip -4 token | tail -1 | sed -e s"/token :: dev//" |  sed -e 's/^[[:space:]]*//')
+        dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | tail -1 | xargs)
 
     else
         echo "Using provided device pattern ${GOPRO_DEVICE_PATTERN}"
