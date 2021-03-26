@@ -1,0 +1,3 @@
+SUBSYSTEM=="net", ATTRS{idVendor}=="2672", ATTRS{product}=="HERO8 BLACK", ACTION=="add", RUN+="/usr/sbin/service gopro_webcam start"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2672", ATTRS{product}=="HERO8 BLACK", ACTION=="remove", RUN+="/usr/sbin/service gopro_webcam stop"
+
