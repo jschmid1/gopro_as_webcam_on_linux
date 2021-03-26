@@ -110,9 +110,25 @@ Feel free to adapt it to your needs and copy it to `/etc/systemd/system/`
 `sudo systemctl start gopro_webcam.service`
 `sudo systemctl status gopro_webcam.service`
 
+Logs can be followed with `sudo journalctl -u gopro_webcam -f`
+
 If all looks fine.
 
 `sudo systemctl enable gopro_webcam.service`
+
+## Start on plug in
+
+You can also start the script when plugging in the usb cable or powering on the camera using udev rules. The script is also stopped without error when unplugging or powering off the camera. You can find an example file `60-gopro.rules` in the repo.
+
+To set this up, first follow the service installation in *Start on boot* above. You can skip the last step `sudo systemctl enable gopro_webcam.service` if you don't want to script to start and fail on every startup.
+
+Then copy the rule file `sudo cp 60-gopro.rules /lib/udev/rules.d/`. Now the setup is complete.
+
+You can check the status using `systemctl` and `journalctl` as described above.
+
+A known issue is that the first service start fails. The second service start then succeeds about 10s later. This is because even the service is only started after the ethernet interface, the network is not fully initialized. The service fails then because no ip is yet available. In the second try, the network is then usually initialized.
+
+Also the udev rule currently only works for HERO8 BLACK. The rules in the file can be duplicated and adapted for every new model supporting webcam mode released by GoPro in the future.
 
 ## Dependencies
 
