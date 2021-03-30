@@ -5,24 +5,11 @@
 ## Installation
 
 ```sh
-sudo su -c "bash <(wget -qO- https://cutt.ly/PjNkrzq)" root
+git clone https://github.com/jschmid1/gopro_as_webcam_on_linux
+sudo ./install.sh
 ```
 
-This runs an install script. Follow the instructions on the screen.
-
-_The script install the `gopro` script to `/usr/local/sbin/gopro` and set an executable flag._
-
-See **Usage** fom here on.
-
-
-#### DEPRECATED
-
-This was the first version of the script which I'll keep around for backwards-compatibility.
-It will however not be maintained for too long.
-
-```sh
-sudo su -c "bash <(wget -qO- https://bit.ly/35wtnTl)" root
-```
+The `gopro` script is installed at `/usr/local/sbin/gopro`.
 
 ## Usage
 
