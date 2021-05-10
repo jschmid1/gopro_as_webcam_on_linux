@@ -38,6 +38,8 @@ globals() {
     GOPRO_DEVICE=${GOPRO_DEVICE}
     GOPRO_IP=${GOPRO_IP}
     GOPRO_USER=${GOPRO_USER}
+    RES="1080"
+    FOV="4"
 }
 
 DEPS=( "ffmpeg" "curl" )
@@ -48,6 +50,7 @@ module_cmd_unload="modprobe -rf v4l2loopback"
 START_PATH="/gp/gpWebcam/START"
 # TODO: seems buggy atm, though
 STOP_PATH="/gp/gpWebcam/STOP"
+FOV_PATH="/gp/gpWebcam/SETTINGS?fov="
 
 function run_args {
 
@@ -58,6 +61,20 @@ function run_args {
     >&2 echo " * Non-interactive:  $GOPRO_NON_INTERACTIVE"
     >&2 echo " * Autostart:        $GOPRO_AUTOSTART"
     >&2 echo " * Preview:          $GOPRO_PREVIEW"
+    >&2 echo " * Resolution:       $RES"
+    fov=""
+    case $FOV in
+  	  0)
+  	   fov="wide"
+  	   ;;
+  	  4)
+  	   fov="linear"
+  	   ;;
+  	  "6")
+  	   fov="narrow"
+  	   ;;
+    esac
+    >&2 echo " * Field of View:    $fov"
     if [[ $GOPRO_DEVICE ]]; then
     >&2 echo " * Device:           $GOPRO_DEVICE"
     fi 
@@ -113,7 +130,9 @@ Options:
                            CAUTION! This may change over time.
   
   -a,  --auto-start        automatically start ffmpeg to serve the GoPro as a video device to your operating system.
-                           If this flag is omitted, print the corresponding command to run it yourself. 
+                           If this flag is omitted, print the corresponding command to run it yourself.
+  -R,  --resolution        Resolutions options i.e. (1080, 720 or 480), default value is 1080.
+  -f,  --fov               FOV: Field Of View i.e. (wide, linear, narrow), default value is linear.
 
   -r,  --preview           Just launch a preview in VLC. This will not expose the device to the OS.
   -u,  --user              VLC can't be started as root, please provide a username you want to run it with. (Typically your 'default/home' user)
@@ -161,6 +180,40 @@ function parse_args {
       -a|--auto-start)
         GOPRO_AUTOSTART=1
         ;;
+      -R|--resolution)
+  	case "$2" in
+  	  "1080")
+  	   RES="1080"
+  	   ;;
+  	  "720")
+  	   RES="720"
+  	   ;;
+  	  "480")
+  	   RES="480"
+  	   ;;
+  	   *)
+  	   echo "Specify resolution valid, values are: 1080, 720 or 480."
+  	   exit 1
+  	   ;;
+  	esac
+  	;;
+  	-f|--fov)
+  	case "$2" in
+  	  "wide")
+  	   FOV="0"
+  	   ;;
+  	  "linear")
+  	   FOV="4"
+  	   ;;
+  	  "narrow")
+  	   FOV="6"
+  	   ;;
+  	   *)
+  	   echo "Specify Field of View, valid values are: wide, linear or narrow."
+  	   exit 1
+  	   ;;
+  	esac
+  	;;
       -r|--preview)
         DEPS+=('vlc')
         GOPRO_PREVIEW=1
@@ -293,7 +346,7 @@ function start_gopro_webcam_mode {
 
     local response
     # Switching to the GoPro Webcam mode
-    response=$(curl -s ${GOPRO_INTERFACE_IP}${START_PATH})
+    response=$(curl -s ${GOPRO_INTERFACE_IP}${START_PATH}"?res="${RES})
     if [ $? -ne 0 ]; then
         red "Error while starting the Webcam mode. # TODO Useful message."
         exit 1
@@ -305,6 +358,14 @@ function start_gopro_webcam_mode {
     fi
 
     green "Sucessfully started the GoPro Webcam mode. (The icon on the Camera should have changed)"
+    
+    # Setting Field Of View (FOV)
+    response=$(curl -s ${GOPRO_INTERFACE_IP}${FOV_PATH}${FOV})
+    if [ $? -ne 0 ]; then
+    	yellow "Do not possible to set FOV for gopro"
+    fi
+    echo $response
+    green "Successfully set the GoPro FOV"
 }
 
 function start_webcam {
@@ -357,6 +418,7 @@ main() {
 
     globals
     parse_args "$@"
+    echo $RES
     run_args
     case $ACTION in
     help)
