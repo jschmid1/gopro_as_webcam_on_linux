@@ -70,7 +70,7 @@ function run_args {
   	  4)
   	   fov="linear"
   	   ;;
-  	  "6")
+  	  6)
   	   fov="narrow"
   	   ;;
     esac
@@ -362,7 +362,7 @@ function start_gopro_webcam_mode {
     # Setting Field Of View (FOV)
     response=$(curl -s ${GOPRO_INTERFACE_IP}${FOV_PATH}${FOV})
     if [ $? -ne 0 ]; then
-    	yellow "Do not possible to set FOV for gopro"
+    	yellow "Failed to set the GoPro FOV"
     fi
     echo $response
     green "Successfully set the GoPro FOV"
@@ -418,7 +418,6 @@ main() {
 
     globals
     parse_args "$@"
-    echo $RES
     run_args
     case $ACTION in
     help)
