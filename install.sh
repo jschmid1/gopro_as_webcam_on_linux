@@ -28,6 +28,3 @@ green "Run with with: "
 green "sudo gopro"
 printf "\n\n"
 yellow "**********************"
-
-
-sudo gopro
