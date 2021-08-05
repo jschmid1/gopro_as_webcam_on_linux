@@ -45,7 +45,7 @@ globals() {
 
 DEPS=( "ffmpeg" "curl" )
 module="v4l2loopback"
-module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoproLinux' video_nr=42"
+module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro' video_nr=42"
 module_cmd_unload="modprobe -rf v4l2loopback"
 
 START_PATH="/gp/gpWebcam/START?res="
@@ -62,7 +62,7 @@ function run_args {
     >&2 echo " * Non-interactive:  $GOPRO_NON_INTERACTIVE"
     >&2 echo " * Autostart:        $GOPRO_AUTOSTART"
     >&2 echo " * Preview:          $GOPRO_PREVIEW"
-    >&2 echo " * Resolution:       $GOPRO_RESOLUTION"
+    >&2 echo " * Resolution:       ${GOPRO_RESOLUTION}p"
     >&2 echo " * FOV:              $GOPRO_FOV"
     if [[ $GOPRO_DEVICE ]]; then
     >&2 echo " * Device:           $GOPRO_DEVICE"
@@ -92,7 +92,7 @@ function validate_arguments {
     fi
 
     if [[ ${GOPRO_AUTOSTART} -eq 1 ]] && [[ ${GOPRO_PREVIEW} -eq 1 ]]; then
-        red "-r | --preview and -a | --autostart are mutually exclusive"
+        red "-v | --preview and -a | --autostart are mutually exclusive"
         exit 1
     fi
 
