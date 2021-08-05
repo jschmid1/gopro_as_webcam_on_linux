@@ -109,6 +109,7 @@ function validate_arguments {
         GOPRO_FOV_ID=6
     else
         red "Please choose either \"wide\", \"linear\", or \"narrow\""
+        exit 1
     fi
 }
 
