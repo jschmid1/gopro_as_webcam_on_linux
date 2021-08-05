@@ -34,6 +34,9 @@ globals() {
     GOPRO_NON_INTERACTIVE=${GOPRO_NON_INTERACTIVE:-0}
     GOPRO_AUTOSTART=${GOPRO_AUTOSTART:-0}
     GOPRO_PREVIEW=${GOPRO_PREVIEW:-0}
+    GOPRO_RESOLUTION=${GOPRO_RESOLUTION:-1080}
+    GOPRO_FOV_ID=${GOPRO_FOV_ID:-4}
+    GOPRO_FOV=${GOPRO_FOV:-linear}
     GOPRO_DEVICE_PATTERN=${GOPRO_DEVICE_PATTERN}
     GOPRO_DEVICE=${GOPRO_DEVICE}
     GOPRO_IP=${GOPRO_IP}
@@ -45,9 +48,10 @@ module="v4l2loopback"
 module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoproLinux' video_nr=42"
 module_cmd_unload="modprobe -rf v4l2loopback"
 
-START_PATH="/gp/gpWebcam/START"
+START_PATH="/gp/gpWebcam/START?res="
 # TODO: seems buggy atm, though
 STOP_PATH="/gp/gpWebcam/STOP"
+FOV_PATH="/gp/gpWebcam/SETTINGS?fov="
 
 function run_args {
 
@@ -58,6 +62,8 @@ function run_args {
     >&2 echo " * Non-interactive:  $GOPRO_NON_INTERACTIVE"
     >&2 echo " * Autostart:        $GOPRO_AUTOSTART"
     >&2 echo " * Preview:          $GOPRO_PREVIEW"
+    >&2 echo " * Resolution:       $GOPRO_RESOLUTION"
+    >&2 echo " * FOV:              $GOPRO_FOV"
     if [[ $GOPRO_DEVICE ]]; then
     >&2 echo " * Device:           $GOPRO_DEVICE"
     fi 
@@ -65,7 +71,7 @@ function run_args {
     >&2 echo " * Device Pattern:   $GOPRO_DEVICE_PATTERN"
     fi 
     if [[ $GOPRO_IP ]]; then
-    >&2 echo " * Ip Address:       $GOPRO_IP"
+    >&2 echo " * IP Address:       $GOPRO_IP"
     fi 
     if [[ $GOPRO_USER ]]; then
     >&2 echo " * User:             $GOPRO_USER"
@@ -94,6 +100,16 @@ function validate_arguments {
         red "-r | --preview needs -u | --user. Please provide it with the mentioned flags"
         exit 1
     fi
+    
+    if [[ ${GOPRO_FOV} == "wide" ]]; then
+        GOPRO_FOV_ID=0
+    elif [[ ${GOPRO_FOV} == "linear" ]]; then
+        GOPRO_FOV_ID=4
+    elif [[ ${GOPRO_FOV} == "narrow" ]]; then
+        GOPRO_FOV_ID=6
+    else
+        red "Please choose either \"wide\", \"linear\", or \"narrow\""
+    fi
 }
 
 function usage {
@@ -109,13 +125,17 @@ Options:
                            USE WITH CAUTION. THIS CHANGES EVERY TIME YOU REBOOT/RECONNECT THE CAMERA
                            THIS OPTION IS NOT SUITABLE FOR AUTOMATION!
 
+  -r,  --resolution        select the resolution you would like the GoPro to output. "1080", "720", or "480."
+  
+  -f,  --fov               select the FOV you would like to use. "wide", "linear", or "narrow."
+
   -i,  --ip                provide a IPv4 address to the GoPro i.e. (172.27.187.52)
                            CAUTION! This may change over time.
   
   -a,  --auto-start        automatically start ffmpeg to serve the GoPro as a video device to your operating system.
                            If this flag is omitted, print the corresponding command to run it yourself. 
 
-  -r,  --preview           Just launch a preview in VLC. This will not expose the device to the OS.
+  -v,  --preview           Just launch a preview in VLC. This will not expose the device to the OS.
   -u,  --user              VLC can't be started as root, please provide a username you want to run it with. (Typically your 'default/home' user)
 
   -V,  --verbose           echo every command that gets executed
@@ -150,6 +170,14 @@ function parse_args {
         GOPRO_DEVICE=$2
         shift
         ;;
+      -r|--resolution)
+        GOPRO_RESOLUTION=$2
+        shift
+        ;;
+      -f|--fov)
+        GOPRO_FOV=$2
+        shift
+        ;;
       -i|--ip)
         GOPRO_IP=$2
         shift
@@ -161,7 +189,7 @@ function parse_args {
       -a|--auto-start)
         GOPRO_AUTOSTART=1
         ;;
-      -r|--preview)
+      -v|--preview)
         DEPS+=('vlc')
         GOPRO_PREVIEW=1
         ;;
@@ -293,11 +321,17 @@ function start_gopro_webcam_mode {
 
     local response
     # Switching to the GoPro Webcam mode
-    response=$(curl -s ${GOPRO_INTERFACE_IP}${START_PATH})
+    response=$(curl -s ${GOPRO_INTERFACE_IP}${START_PATH}${GOPRO_RESOLUTION})
     if [ $? -ne 0 ]; then
         red "Error while starting the Webcam mode. # TODO Useful message."
         exit 1
     fi 
+    echo $response
+    if [[ -z "${response}" ]]; then
+        red "Did not receive a valid response from your GoPro. Please try again to run this script, timing is sometimes crucial."
+        exit 1
+    fi
+    response=$(curl -s ${GOPRO_INTERFACE_IP}${FOV_PATH}${GOPRO_FOV_ID})
     echo $response
     if [[ -z "${response}" ]]; then
         red "Did not receive a valid response from your GoPro. Please try again to run this script, timing is sometimes crucial."
