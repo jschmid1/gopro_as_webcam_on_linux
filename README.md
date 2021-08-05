@@ -49,16 +49,22 @@ Options:
                            USE WITH CAUTION. THIS CHANGES EVERY TIME YOU REBOOT/RECONNECT THE CAMERA
                            THIS OPTION IS NOT SUITABLE FOR AUTOMATION!
 
+  -r,  --resolution        select the resolution you would like the GoPro to output. "1080", "720", or "480."
+  
+  -f,  --fov               select the FOV you would like to use. "wide", "linear", or "narrow."
+
   -i,  --ip                provide a IPv4 address to the GoPro i.e. (172.27.187.52)
-                           CAUTION! This may change as well over time.
+                           CAUTION! This may change over time.
   
   -a,  --auto-start        automatically start ffmpeg to serve the GoPro as a video device to your operating system.
-                           If this flag is omitted, print the corresponding command to run it yourself. 
+                           If this flag is omitted, print the corresponding command to run it yourself.
 
-  -r,  --preview           Just launch a preview in VLC. This will not expose the device to the OS.
+  -v,  --preview           Just launch a preview in VLC. This will not expose the device to the OS.
+
   -u,  --user              VLC can't be started as root, please provide a username you want to run it with. (Typically your 'default/home' user)
 
   -V,  --verbose           echo every command that gets executed
+
   -h,  --help              display this help
 Commands:
   webcam                   start the GoPro in webcam mode
