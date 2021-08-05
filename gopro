@@ -111,6 +111,11 @@ function validate_arguments {
         red "Please choose either \"wide\", \"linear\", or \"narrow\""
         exit 1
     fi
+    
+    if [[ ${GOPRO_FOV} -ne "1080" && ${GOPRO_FOV} -ne "720" && ${GOPRO_FOV} -ne "480" ]]; then
+        red "Please choose either \"1080\", \"720\", or \"480\""
+        exit 1
+    fi
 }
 
 function usage {
