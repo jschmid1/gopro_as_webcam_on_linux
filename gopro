@@ -20,17 +20,26 @@ yellow() {
     echo -e "\e[33m${1}\e[0m"
 }
 
+function checks {
+    permission_check
+    firewall_check
+}
+
 function permission_check {
-    if [ "$EUID" -ne 0 ]; then
+    if [[ "$(whoami)" != "root" ]]; then
         # the script needs root/sudo
         red "Please run as root or with sudo"
         exit 1
     fi
 }
 
+function firewall_check {
+    if [[ "$(ufw status)" != "Status: inactive" ]]; then
+	red "Using your firewall can cause issues with ffmpeg."
+    fi
+}
+
 globals() {
-    # TODO: Use GOPRO_ prefix
-    # TODO: rename AUTO -> NONINTERACTIVE
     GOPRO_NON_INTERACTIVE=${GOPRO_NON_INTERACTIVE:-0}
     GOPRO_AUTOSTART=${GOPRO_AUTOSTART:-0}
     GOPRO_PREVIEW=${GOPRO_PREVIEW:-0}
@@ -405,8 +414,8 @@ main() {
         usage
         ;;
     webcam)
-        # check if sudo/root
-        permission_check
+        # run checks
+        checks
 
         # If module is loaded already, unload it, to maintain idempotency.
         test_module_loaded
