@@ -140,11 +140,15 @@ Also the udev rule currently only works for HERO8 BLACK. The rules in the file c
 ## Dependencies
 
 ```sh
-sudo apt install ffmpeg v4l2loopback-dkms
+sudo apt install ffmpeg v4l2loopback-dkms curl vlc
 ```
 
 If your distribution doesn't provide `v4l2loopback-dkms` you may get it from https://github.com/umlaeute/v4l2loopback
 
+## Troubleshooting
+
+### I can't find the network device for my GoPro
+Double check that the USB connection mode is GoPro Connect and not MTP under Preferences -> Connections -> USB Connection. If that options doesn't exist, you likely need a firmware upgrade. Instructions can be found at https://gopro.com/en/us/update.
 
 ## Release History
 
