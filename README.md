@@ -163,6 +163,13 @@ Double check that the USB connection mode is GoPro Connect and not MTP under Pre
 
 Credits go to https://github.com/KonradIT for a comprehensive documentation and tooling around inofficial GoPro things.
 
+## Buy the developer a cup of coffee!
+
+If you found the utility helpful you can buy me a cup of coffee using
+
+[![Donate](https://www.paypalobjects.com/webstatic/en_US/i/btn/png/silver-pill-paypal-44px.png)](https://www.paypal.com/donate?hosted_button_id=MKPX7GG6MMER8)
+
+
 ## Contributing
 
 1. Fork it (<https://github.com/jschmid1/gopro_as_webcam_on_linux/fork>)
