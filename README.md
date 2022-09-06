@@ -4,8 +4,10 @@
 ## Installation
 
 ```sh
-sudo su -c "bash <(wget -qO- [https://cutt.ly/PjNkrzq](https://raw.githubusercontent.com/jschmid1/gopro_as_webcam_on_linux/master/install.sh))" root
+sudo su -c "bash <(wget -qO- https://cutt.ly/PjNkrzq)" root
 ```
+
+(If you're unable to access the shortened link, use the following: `https://raw.githubusercontent.com/jschmid1/gopro_as_webcam_on_linux/master/install.sh` )
 
 This runs an install script. Follow the instructions on the screen.
 
@@ -71,6 +73,16 @@ Options:
 Commands:
   webcam                   start the GoPro in webcam mode
 
+```
+
+## Formats supported
+
+After launched in webcam mode, the device only supports one format:
+
+```
+	[0]: 'YU12' (Planar YUV 4:2:0)
+		Size: Discrete 1920x1080
+			Interval: Discrete 0.033s (30.000 fps)
 ```
 
 ## Examples
