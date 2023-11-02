@@ -35,6 +35,7 @@ globals() {
     GOPRO_AUTOSTART=${GOPRO_AUTOSTART:-0}
     GOPRO_PREVIEW=${GOPRO_PREVIEW:-0}
     GOPRO_RESOLUTION=${GOPRO_RESOLUTION:-1080}
+    GOPRO_CROP=${GOPRO_CROP}
     GOPRO_FOV_ID=${GOPRO_FOV_ID:-4}
     GOPRO_FOV=${GOPRO_FOV:-linear}
     GOPRO_DEVICE_PATTERN=${GOPRO_DEVICE_PATTERN}
@@ -63,6 +64,9 @@ function run_args {
     >&2 echo " * Autostart:        $GOPRO_AUTOSTART"
     >&2 echo " * Preview:          $GOPRO_PREVIEW"
     >&2 echo " * Resolution:       ${GOPRO_RESOLUTION}p"
+    if [[ $GOPRO_CROP ]]; then
+    >&2 echo " * Crop:             $GOPRO_CROP"
+    fi
     >&2 echo " * FOV:              $GOPRO_FOV"
     if [[ $GOPRO_DEVICE ]]; then
     >&2 echo " * Device:           $GOPRO_DEVICE"
@@ -132,6 +136,9 @@ Options:
                            THIS OPTION IS NOT SUITABLE FOR AUTOMATION!
 
   -r,  --resolution        select the resolution you would like the GoPro to output. "1080", "720", or "480."
+
+  -c,  --crop              give ffmpeg a crop of "w:h:x:y", for instance when using resolution "1080", a crop of "1280:720:320:180"
+                           would take the center 720p out of the 1080p video.
   
   -f,  --fov               select the FOV you would like to use. "wide", "linear", or "narrow."
 
@@ -180,6 +187,10 @@ function parse_args {
         ;;
       -r|--resolution)
         GOPRO_RESOLUTION=$2
+        shift
+        ;;
+      -c|--crop)
+        GOPRO_CROP=$2
         shift
         ;;
       -f|--fov)
@@ -366,7 +377,11 @@ function expose_device {
 
     if [[ ${GOPRO_AUTOSTART} -eq 1 ]]; then
         echo "Starting ffmpeg.."
-        ffmpeg -nostdin -threads 1 -i 'udp://@0.0.0.0:8554?overrun_nonfatal=1&fifo_size=50000000' -f:v mpegts -fflags nobuffer -vf format=yuv420p -f v4l2 /dev/video42
+        CROP=""
+        if [ -n "${GOPRO_CROP}" ]; then
+            CROP=",crop=${GOPRO_CROP}"
+        fi
+        ffmpeg -nostdin -threads 1 -i 'udp://@0.0.0.0:8554?overrun_nonfatal=1&fifo_size=50000000' -f:v mpegts -fflags nobuffer -vf format="yuv420p${CROP}" -f v4l2 /dev/video42
     elif [[ ${GOPRO_PREVIEW} -eq 1 ]]; then
         echo "Starting preview.."
         start_preview
