@@ -4,29 +4,11 @@
 ## Installation
 
 ```sh
-sudo su -c "bash <(wget -qO- https://cutt.ly/PjNkrzq)" root
+git clone https://github.com/jschmid1/gopro_as_webcam_on_linux
+sudo ./install.sh
 ```
 
-(If you're unable to access the shortened link, use the following: `https://raw.githubusercontent.com/jschmid1/gopro_as_webcam_on_linux/master/install.sh` )
-
-This runs an install script. Follow the instructions on the screen.
-
-_The script install the `gopro` script to `/usr/local/sbin/gopro` and set an executable flag._
-
-This script is also on the [Arch User Repositories (AUR)](https://aur.archlinux.org/packages/gopro-webcam/). Please check the Arch wiki for more information on how to install from the AUR.
-
-
-See **Usage** fom here on.
-
-
-#### DEPRECATED
-
-This was the first version of the script which I'll keep around for backwards-compatibility.
-It will however not be maintained for too long.
-
-```sh
-sudo su -c "bash <(wget -qO- https://bit.ly/35wtnTl)" root
-```
+The `gopro` script is installed at `/usr/local/sbin/gopro`.
 
 ## Usage
 

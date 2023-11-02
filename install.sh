@@ -17,9 +17,14 @@ function yellow {
     printf "${YELLOW}$@${NC}\n"
 }
 
-curl -s https://raw.githubusercontent.com/jschmid1/gopro_as_webcam_on_linux/master/gopro -o /usr/local/sbin/gopro
+# Check for root privileges
+if [ $EUID -ne 0 ]; then
+    red 'Installer must be run as root!'
+    red "Try running: sudo $0"
+    exit 1
+fi
 
-chmod +x /usr/local/sbin/gopro
+install -D ./gopro /usr/local/sbin/gopro
 
 yellow "**********************"
 printf "\n\n"
@@ -28,3 +33,5 @@ green "Run with with: "
 green "sudo gopro"
 printf "\n\n"
 yellow "**********************"
+
+gopro
