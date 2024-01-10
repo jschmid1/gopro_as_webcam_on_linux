@@ -137,6 +137,12 @@ Also the udev rule currently only works for HERO8 BLACK. The rules in the file c
 ```sh
 sudo apt install ffmpeg v4l2loopback-dkms curl vlc
 ```
+Traffic on port `8554/udp` of the webcam network interface must be enabled
+e.g. with `firewalld`:
+```
+sudo firewall-cmd --add-port 8554/udp
+sudo firewall-cmd --add-port 8554/udp --permanent
+```
 
 If your distribution doesn't provide `v4l2loopback-dkms` you may get it from https://github.com/umlaeute/v4l2loopback
 
