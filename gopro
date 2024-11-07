@@ -42,6 +42,8 @@ globals() {
     GOPRO_DEVICE=${GOPRO_DEVICE}
     GOPRO_IP=${GOPRO_IP}
     GOPRO_USER=${GOPRO_USER}
+    GOPRO_VIDEO_NUMBER=${GOPRO_VIDEO_NUMBER:-42}
+    GOPRO_PORT=${GOPRO_PORT:-8554}
 }
 
 DEPS=( "ffmpeg" "curl" )
@@ -49,7 +51,7 @@ module="v4l2loopback"
 module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro' video_nr=42"
 module_cmd_unload="modprobe -rf v4l2loopback"
 
-START_PATH="/gp/gpWebcam/START?res="
+START_PATH="/gp/gpWebcam/START"
 # TODO: seems buggy atm, though
 STOP_PATH="/gp/gpWebcam/STOP"
 FOV_PATH="/gp/gpWebcam/SETTINGS?fov="
@@ -80,6 +82,12 @@ function run_args {
     if [[ $GOPRO_USER ]]; then
     >&2 echo " * User:             $GOPRO_USER"
     fi 
+    if [[ $GOPRO_VIDEO_NUMBER ]]; then
+    >&2 echo " * Video Number:     /dev/video$GOPRO_VIDEO_NUMBER"
+    fi
+    if [[ $GOPRO_PORT ]]; then
+    >&2 echo " * Port:             $GOPRO_PORT"
+    fi
     >&2 echo "=========================="
     >&2 echo ""
 }
@@ -115,6 +123,7 @@ function validate_arguments {
         red "Please choose either \"wide\", \"linear\", or \"narrow\""
         exit 1
     fi
+    module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro'$GOPRO_VIDEO_NUMBER video_nr=$GOPRO_VIDEO_NUMBER"
     
     if [[ ${GOPRO_RESOLUTION} -ne "1080" && ${GOPRO_RESOLUTION} -ne "720" && ${GOPRO_RESOLUTION} -ne "480" ]]; then
         red "Please choose either \"1080\", \"720\", or \"480\""
@@ -153,6 +162,10 @@ Options:
   -u,  --user              VLC can't be started as root, please provide a username you want to run it with. (Typically your 'default/home' user)
 
   -V,  --verbose           echo every command that gets executed
+
+  -n,  --video-number      select the number of video device you would like to use. Default is 42.
+
+  -P,  --PORT              select the port you would like to use. Default is 8554.
 
   -h,  --help              display this help
 Commands:
@@ -211,6 +224,14 @@ function parse_args {
       -v|--preview)
         DEPS+=('vlc')
         GOPRO_PREVIEW=1
+        ;;
+      -n|--video-number)
+        GOPRO_VIDEO_NUMBER=$2
+        shift
+        ;;
+      -P|--PORT)
+        GOPRO_PORT=$2
+        shift
         ;;
       -)
         _EXTRA_ARGS+=("$(cat $2)")
@@ -340,20 +361,15 @@ function start_gopro_webcam_mode {
 
     local response
     # Switching to the GoPro Webcam mode
-    response=$(curl -s ${GOPRO_INTERFACE_IP}${START_PATH}${GOPRO_RESOLUTION})
+    # 一度にすべての設定を送信
+    response=$(curl -s "${GOPRO_INTERFACE_IP}${START_PATH}?res=${GOPRO_RESOLUTION}&fov=${GOPRO_FOV}&port=${GOPRO_PORT}")
     if [ $? -ne 0 ]; then
-        red "Error while starting the Webcam mode. # TODO Useful message."
-        exit 1
-    fi 
-    echo $response
-    if [[ -z "${response}" ]]; then
-        red "Did not receive a valid response from your GoPro. Please try again to run this script, timing is sometimes crucial."
+        red "Error while starting the Webcam mode."
         exit 1
     fi
-    response=$(curl -s ${GOPRO_INTERFACE_IP}${FOV_PATH}${GOPRO_FOV_ID})
     echo $response
     if [[ -z "${response}" ]]; then
-        red "Did not receive a valid response from your GoPro. Please try again to run this script, timing is sometimes crucial."
+        red "Did not receive a valid response from your GoPro. Please try again."
         exit 1
     fi
 
@@ -381,7 +397,7 @@ function expose_device {
         if [ -n "${GOPRO_CROP}" ]; then
             CROP=",crop=${GOPRO_CROP}"
         fi
-        ffmpeg -nostdin -threads 1 -i 'udp://@0.0.0.0:8554?overrun_nonfatal=1&fifo_size=50000000' -f:v mpegts -fflags nobuffer -vf format="yuv420p${CROP}" -f v4l2 /dev/video42
+        ffmpeg -nostdin -threads 1 -i "udp://@0.0.0.0:${GOPRO_PORT}?overrun_nonfatal=1&fifo_size=50000000" -f:v mpegts -fflags nobuffer -vf format="yuv420p${CROP}" -f v4l2 /dev/video${GOPRO_VIDEO_NUMBER}
     elif [[ ${GOPRO_PREVIEW} -eq 1 ]]; then
         echo "Starting preview.."
         start_preview
@@ -395,18 +411,18 @@ function expose_device {
 function start_preview {
 
     echo -e "To test this try this command(vlc needs to be installed): \n"
-    sudo -u $GOPRO_USER vlc -vvv --network-caching=300 --sout-x264-preset=ultrafast --sout-x264-tune=zerolatency --sout-x264-vbv-bufsize 0 --sout-transcode-threads 4 --no-audio udp://@:8554
+    sudo -u $GOPRO_USER vlc -vvv --network-caching=300 --sout-x264-preset=ultrafast --sout-x264-tune=zerolatency --sout-x264-vbv-bufsize 0 --sout-transcode-threads 4 --no-audio udp://@:${GOPRO_PORT}
 }
 
 function info_only {
     echo -e "\n\nYou should be ready to use your GoPro on your prefered videostreaming tool. Have Fun!"
 
     echo -e "\n\nIf you want to use the GoPro in your prefered Video conferencing software (browser and apps works alike) pipe the UDP stream to a video device (that was created already) with this command: \n"
-    green "ffmpeg -nostdin -threads 1 -i 'udp://@0.0.0.0:8554?overrun_nonfatal=1&fifo_size=50000000' -f:v mpegts -fflags nobuffer -vf format=yuv420p -f v4l2 /dev/video42"
+    green "ffmpeg -nostdin -threads 1 -i 'udp://@0.0.0.0:${GOPRO_PORT}?overrun_nonfatal=1&fifo_size=50000000' -f:v mpegts -fflags nobuffer -vf format=yuv420p -f v4l2 /dev/video${GOPRO_VIDEO_NUMBER}"
     
     echo -e "\nTo get a preview of the output in vlc you can run this command"
     echo -e "To test this try this command(vlc needs to be installed): \n"
-    green "vlc -vvv --network-caching=300 --sout-x264-preset=ultrafast --sout-x264-tune=zerolatency --sout-x264-vbv-bufsize 0 --sout-transcode-threads 4 --no-audio udp://@:8554"
+    green "vlc -vvv --network-caching=300 --sout-x264-preset=ultrafast --sout-x264-tune=zerolatency --sout-x264-vbv-bufsize 0 --sout-transcode-threads 4 --no-audio udp://@:${GOPRO_PORT}"
 }
 
 
