@@ -111,16 +111,16 @@ WantedBy=multi-user.target
 
 Feel free to adapt it to your needs and copy it to `/etc/systemd/system/`
 
-`sudo cp gopro_webcam.service /etc/systemd/system/`
+`sudo cp gopro-webcam.service /etc/systemd/system/`
 
-`sudo systemctl start gopro_webcam.service`
-`sudo systemctl status gopro_webcam.service`
+`sudo systemctl start gopro-webcam.service`
+`sudo systemctl status gopro-webcam.service`
 
-Logs can be followed with `sudo journalctl -u gopro_webcam -f`
+Logs can be followed with `sudo journalctl -u gopro-webcam -f`
 
 If all looks fine.
 
-`sudo systemctl enable gopro_webcam.service`
+`sudo systemctl enable gopro-webcam.service`
 
 ## Start on plug in
 
