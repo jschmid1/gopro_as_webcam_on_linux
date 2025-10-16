@@ -315,6 +315,28 @@ function discover_device {
     GOPRO_DEVICE=${dev}
 }
 
+# configure (fixup) NetworkManager's automatically created connection
+# which may e.g. have a type "shared", what prevents the interface from getting correct IP address from GoPro
+function configure_nm_connection {
+    GOPRO_NM_CONN=$(nmcli -t -f GENERAL.CON-UUID device show enp4s0f4u1 | awk -F: '{print $2}')
+
+    if echo $GOPRO_NM_CONN | grep -E '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' &> /dev/null; then
+        conn_method=$(nmcli -t -f ipv4.method conn show ${GOPRO_NM_CONN})
+        if [[ "$conn_method" == "ipv4.method:auto" ]]; then
+            green "NetworkManager's connection method is auto."
+        else
+            yellow "NetworkManager's connection method is not auto, setting ..."
+            nmcli conn modify "${GOPRO_NM_CONN}" ipv4.method auto
+            nmcli conn down "${GOPRO_NM_CONN}"
+            nmcli conn up "${GOPRO_NM_CONN}"
+            yellow "Connectio method is set to auto."
+        fi
+    else
+        yellow "No NetworkManager connection found to fixup."
+    fi
+
+}
+
 function find_gopro_ip {
 
     if [[ ! ${GOPRO_IP} ]]; then
@@ -365,6 +387,8 @@ function start_webcam {
     if [[ ! ${GOPRO_DEVICE} ]] && [[ ! ${GOPRO_IP} ]]; then
         discover_device
     fi
+
+    configure_nm_connection
 
     find_gopro_ip
 
