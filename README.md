@@ -51,6 +51,10 @@ Options:
 
   -V,  --verbose           echo every command that gets executed
 
+  -n,  --video-number      select the number of video device you would like to use. Default is 42. This means /dev/video42 will be created.
+
+  -P,  --PORT              select the port you would like to use. Default is 8554.
+
   -h,  --help              display this help
 Commands:
   webcam                   start the GoPro in webcam mode
