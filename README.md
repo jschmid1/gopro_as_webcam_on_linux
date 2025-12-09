@@ -1,5 +1,5 @@
 # Use your GoPro as a webcam on Linux (without additional hardware)
-> Currently there is no official support for using your GoPro 8, 9, or 10 (the only versions that offer this feature natively) as a webcam on Linux. The web is full of incomplete tutorials for this topic. This script tries to simplify this effort.
+> Currently there is no official support for using your GoPro 8, 9, 10, 11, 12 and 13 (the only versions that offer this feature natively) as a webcam on Linux. The web is full of incomplete tutorials for this topic. This script tries to simplify this effort.
 
 ## Installation
 
