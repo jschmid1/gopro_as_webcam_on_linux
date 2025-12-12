@@ -10,6 +10,8 @@ sudo ./install.sh
 
 The `gopro` script is installed at `/usr/local/sbin/gopro`.
 
+Use `--auto` flag to install [service](#start-on-boot) and [udev rules](#start-on-plug-in) along with the script.
+
 ## Usage
 
 ``` sh
@@ -89,6 +91,8 @@ Use the provided ip '172.27.187.52' and automatically start an ffmpeg to expose 
 
 ## Start on boot
 
+> ! you can use install.sh's `--auto` flag to install the service
+
 It's rather annoying to start this script every time you start up your PC. This is why I provided an example `service` file in this repository.
 
 **Note that the GoPro needs to be plugged in and be in 'standby' mode (Charger symbol) when the computer boots**
@@ -111,18 +115,20 @@ WantedBy=multi-user.target
 
 Feel free to adapt it to your needs and copy it to `/etc/systemd/system/`
 
-`sudo cp gopro_webcam.service /etc/systemd/system/`
+`sudo cp gopro-webcam.service /etc/systemd/system/`
 
-`sudo systemctl start gopro_webcam.service`
-`sudo systemctl status gopro_webcam.service`
+`sudo systemctl start gopro-webcam.service`
+`sudo systemctl status gopro-webcam.service`
 
-Logs can be followed with `sudo journalctl -u gopro_webcam -f`
+Logs can be followed with `sudo journalctl -u gopro-webcam -f`
 
 If all looks fine.
 
-`sudo systemctl enable gopro_webcam.service`
+`sudo systemctl enable gopro-webcam.service`
 
 ## Start on plug in
+
+> ! you can use install.sh's `--auto` flag to install the rules
 
 You can also start the script when plugging in the usb cable or powering on the camera using udev rules. The script is also stopped without error when unplugging or powering off the camera. You can find an example file `60-gopro.rules` in the repo.
 
