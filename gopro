@@ -340,9 +340,18 @@ function find_gopro_ip {
 
     if [[ ! ${GOPRO_IP} ]]; then
         yellow "Using ${GOPRO_DEVICE} to discover the GOPRO_IP."
-        ip=$(ip -4 addr show dev ${GOPRO_DEVICE} | grep -Po '(?<=inet )[\d.]+')
+        local ip=""
+        local max_wait=15
+        for (( i=1; i<=max_wait; i++ )); do
+            ip=$(ip -4 addr show dev ${GOPRO_DEVICE} 2>/dev/null | grep -Po '(?<=inet )[\d.]+')
+            if [[ -n ${ip} ]]; then
+                break
+            fi
+            yellow "Waiting for IP on ${GOPRO_DEVICE}... (${i}/${max_wait})"
+            sleep 1
+        done
         if [[ -z ${ip} ]]; then
-            red "Could not automatically discover a valid GOPRO_IP. Use the '-p, -d or -i' option to provide more information. (see --help for more information)"
+            red "Could not automatically discover a valid GOPRO_IP after ${max_wait}s. Use the '-p, -d or -i' option to provide more information. (see --help for more information)"
             exit 1
         fi
         green "Found ${ip}"
@@ -397,6 +406,22 @@ function expose_device {
         if [ -n "${GOPRO_CROP}" ]; then
             CROP=",crop=${GOPRO_CROP}"
         fi
+        # The GoPro sometimes doesn't begin streaming after the first START.
+        # Re-send START in the background if the stream hasn't started.
+        (
+            sleep 3
+            for i in $(seq 1 3); do
+                local_width=$(v4l2-ctl -d /dev/video${GOPRO_VIDEO_NUMBER} --get-fmt-video 2>/dev/null \
+                    | grep -oP 'Width/Height\s*:\s*\K\d+' || echo 0)
+                if [[ "${local_width}" -gt 640 ]]; then
+                    echo "Stream is active on /dev/video${GOPRO_VIDEO_NUMBER}"
+                    exit 0
+                fi
+                echo "Re-sending START to GoPro (attempt ${i}/3)..."
+                curl -sf "${GOPRO_INTERFACE_IP}${START_PATH}?res=${GOPRO_RESOLUTION}&fov=${GOPRO_FOV}&port=${GOPRO_PORT}" >/dev/null 2>&1 || true
+                sleep 5
+            done
+        ) &
         ffmpeg -nostdin -threads 1 -i "udp://@0.0.0.0:${GOPRO_PORT}?overrun_nonfatal=1&fifo_size=50000000" -f:v mpegts -fflags nobuffer -vf format="yuv420p${CROP}" -f v4l2 /dev/video${GOPRO_VIDEO_NUMBER}
     elif [[ ${GOPRO_PREVIEW} -eq 1 ]]; then
         echo "Starting preview.."
