@@ -115,12 +115,14 @@ function validate_arguments {
     
     if [[ ${GOPRO_FOV} == "wide" ]]; then
         GOPRO_FOV_ID=0
-    elif [[ ${GOPRO_FOV} == "linear" ]]; then
-        GOPRO_FOV_ID=4
     elif [[ ${GOPRO_FOV} == "narrow" ]]; then
         GOPRO_FOV_ID=2
+    elif [[ ${GOPRO_FOV} == "superview" ]]; then
+        GOPRO_FOV_ID=3
+    elif [[ ${GOPRO_FOV} == "linear" ]]; then
+        GOPRO_FOV_ID=4
     else
-        red "Please choose either \"wide\", \"linear\", or \"narrow\""
+        red "Please choose either \"wide\", \"narrow\", \"superview\", or \"linear\""
         exit 1
     fi
     module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro'$GOPRO_VIDEO_NUMBER video_nr=$GOPRO_VIDEO_NUMBER"
@@ -149,7 +151,7 @@ Options:
   -c,  --crop              give ffmpeg a crop of "w:h:x:y", for instance when using resolution "1080", a crop of "1280:720:320:180"
                            would take the center 720p out of the 1080p video.
   
-  -f,  --fov               select the FOV you would like to use. "wide", "linear", or "narrow."
+  -f,  --fov               select the FOV you would like to use. "wide", "narrow", "superview", or "linear."
 
   -i,  --ip                provide a IPv4 address to the GoPro i.e. (172.27.187.52)
                            CAUTION! This may change over time.
