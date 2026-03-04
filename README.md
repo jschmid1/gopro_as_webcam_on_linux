@@ -5,6 +5,7 @@
 
 ```sh
 git clone https://github.com/jschmid1/gopro_as_webcam_on_linux
+cd gopro_as_webcam_on_linux
 sudo ./install.sh
 ```
 
