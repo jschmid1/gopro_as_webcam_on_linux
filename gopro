@@ -364,7 +364,7 @@ function start_gopro_webcam_mode {
     local response
     # Switching to the GoPro Webcam mode
     # 一度にすべての設定を送信
-    response=$(curl -s "${GOPRO_INTERFACE_IP}${START_PATH}?res=${GOPRO_RESOLUTION}&port=${GOPRO_PORT}")
+    response=$(curl -s --fail --show-error "${GOPRO_INTERFACE_IP}${START_PATH}?res=${GOPRO_RESOLUTION}&port=${GOPRO_PORT}")
     if [ $? -ne 0 ]; then
         red "Error while starting the Webcam mode."
         exit 1
@@ -377,7 +377,7 @@ function start_gopro_webcam_mode {
 
     # Handle FOV update after connecting
     local fov_response
-    fov_response=$(curl -s "${GOPRO_INTERFACE_IP}${FOV_PATH}${GOPRO_FOV_ID}")
+    fov_response=$(curl -s --fail --show-error "${GOPRO_INTERFACE_IP}${FOV_PATH}${GOPRO_FOV_ID}")
     if [[ $? -ne 0 ]]; then
         red "Error updating the FOV."
         exit 1
