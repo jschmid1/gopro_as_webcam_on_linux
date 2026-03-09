@@ -24,7 +24,17 @@ if [ $EUID -ne 0 ]; then
     exit 1
 fi
 
+green "Installing the gopro tool"
 install -D ./gopro /usr/local/sbin/gopro
+
+if [ "$1" == "--auto" ]; then
+    green "Installing systemd service"
+    install -o root -g root -m 0644 ./gopro-webcam.service /etc/systemd/system
+    systemctl daemon-reload
+    green "Installing udev rules"
+    install -o root -g root -m 0644 ./60-gopro.rules /etc/udev/rules.d
+    udevadm control --reload
+fi
 
 yellow "**********************"
 printf "\n\n"

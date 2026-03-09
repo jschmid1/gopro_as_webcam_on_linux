@@ -1,3 +1,6 @@
-SUBSYSTEM=="net", ATTRS{idVendor}=="2672", ATTRS{product}=="GoPro HERO9", ACTION=="add", RUN+="systemctl start gopro_webcam"
-SUBSYSTEM=="net", ATTRS{idVendor}=="2672", ATTRS{product}=="GoPro HERO9", ACTION=="remove", RUN+="systemctl stop gopro_webcam"
+SUBSYSTEM=="net", ATTRS{idVendor}=="2672", ATTRS{product}=="GoPro HERO9", ACTION=="add", RUN+="/usr/bin/systemctl start gopro-webcam"
+SUBSYSTEM=="net", ATTRS{idVendor}=="2672", ATTRS{product}=="GoPro HERO9", ACTION=="remove", RUN+="/usr/bin/systemctl stop gopro-webcam"
 
+# GoPro HERO12 Black
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2672", ATTRS{idProduct}=="0059", ACTION=="add", RUN+="/usr/bin/systemctl start gopro-webcam"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2672", ATTRS{idProduct}=="0059", ACTION=="remove", RUN+="/usr/bin/systemctl stop gopro-webcam"
