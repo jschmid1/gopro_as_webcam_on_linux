@@ -46,7 +46,7 @@ globals() {
     GOPRO_PORT=${GOPRO_PORT:-8554}
 }
 
-DEPS=( "ffmpeg" "curl" )
+DEPS=( "ffmpeg" "curl" "dhcpcd" )
 module="v4l2loopback"
 module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro' video_nr=42"
 module_cmd_unload="modprobe -rf v4l2loopback"
@@ -336,6 +336,27 @@ function discover_device {
 
     green "\nDiscovered: ${dev}."
     GOPRO_DEVICE=${dev}
+
+    # Ensure the interface has an IP, configure via DHCP if not
+    local existing_ip
+    existing_ip=$(ip -4 addr show dev "${GOPRO_DEVICE}" | grep -Po '(?<=inet )[\d.]+')
+    if [[ -z ${existing_ip} ]]; then
+        yellow "No IP assigned on ${GOPRO_DEVICE}, requesting via DHCP..."
+        ip link set "${GOPRO_DEVICE}" up
+        dhcpcd --nogateway --timeout 10 "${GOPRO_DEVICE}"
+
+        local attempts=0
+        while [[ -z ${existing_ip} ]] && [[ $attempts -lt 10 ]]; do
+            sleep 1
+            existing_ip=$(ip -4 addr show dev "${GOPRO_DEVICE}" | grep -Po '(?<=inet )[\d.]+')
+            ((attempts++))
+        done
+
+        if [[ -z ${existing_ip} ]]; then
+            red "Failed to obtain an IP address on ${GOPRO_DEVICE}."
+            exit 1
+        fi
+    fi
 }
 
 function find_gopro_ip {
