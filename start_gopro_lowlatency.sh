@@ -95,9 +95,12 @@ echo -e "${GREEN}✓ GoPro control IP: $GOPRO_IP${NC}\n"
 
 # Start webcam mode
 echo -e "${YELLOW}Starting webcam mode on the GoPro...${NC}"
-RESPONSE=$(curl -s ${GOPRO_IP}/gp/gpWebcam/START)
+set +e
+RESPONSE=$(curl -sf "${GOPRO_IP}/gp/gpWebcam/START")
+curl_status=$?
+set -e
 
-if [ $? -ne 0 ] || [ -z "$RESPONSE" ]; then
+if [ "${curl_status}" -ne 0 ] || [ -z "${RESPONSE}" ]; then
     echo -e "${RED}Error: Unable to start webcam mode${NC}"
     echo "Make sure the GoPro is in USB mode and not charge-only mode"
     exit 1
