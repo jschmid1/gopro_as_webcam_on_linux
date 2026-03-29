@@ -35,11 +35,14 @@ for cmd in ffmpeg curl; do
     fi
 done
 
-# Cleanup handler
+# Cleanup handler - tracks FFmpeg PID to avoid killing unrelated processes
+FFMPEG_PID=""
 cleanup() {
     echo -e "\n${YELLOW}Cleaning up...${NC}"
-    pkill -f "ffmpeg.*$UDP_PORT" 2>/dev/null || true
-    sleep 1
+    if [ -n "$FFMPEG_PID" ]; then
+        kill "$FFMPEG_PID" 2>/dev/null || true
+        sleep 1
+    fi
     echo -e "${GREEN}Stopped cleanly${NC}"
     exit 0
 }
@@ -68,8 +71,8 @@ echo -e "${YELLOW}Looking for the GoPro...${NC}"
 echo "Make sure the GoPro is plugged in over USB and powered on."
 read -p "Press Enter to continue..."
 
-# Find the interface that was added last
-DEV=$(ip -4 token | tail -1 | sed -e 's/token :: dev//' | sed -e 's/^[[:space:]]*//')
+# Find the interface that was added last (skip loopback)
+DEV=$(ip -4 token | grep -v "dev lo$" | tail -1 | sed -e 's/token :: dev//' | sed -e 's/^[[:space:]]*//')
 
 if [ -z "$DEV" ]; then
     echo -e "${RED}Error: Unable to find the GoPro interface${NC}"
@@ -132,7 +135,11 @@ ffmpeg -nostdin \
     -vf format=yuv420p \
     -fps_mode passthrough \
     -max_delay 0 \
-    -f v4l2 ${VIDEO_DEVICE}
+    -f v4l2 ${VIDEO_DEVICE} &
+
+# Capture FFmpeg PID to enable precise cleanup
+FFMPEG_PID=$!
+wait $FFMPEG_PID
 
 # The script exits here when FFmpeg is interrupted
 cleanup

@@ -35,8 +35,11 @@ if [ ! -z "$DEV" ]; then
     if [ ! -z "$IP" ]; then
         GOPRO_IP=$(echo ${IP} | awk -F"." '{print $1"."$2"."$3".51"}')
         echo -e "${YELLOW}Sending the STOP command to the GoPro...${NC}"
-        curl -s ${GOPRO_IP}/gp/gpWebcam/STOP > /dev/null 2>&1
-        echo -e "${GREEN}✓ STOP command sent${NC}"
+        if curl -sf ${GOPRO_IP}/gp/gpWebcam/STOP > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ STOP command sent${NC}"
+        else
+            echo -e "${RED}✗ Failed to send STOP command to the GoPro at ${GOPRO_IP}${NC}"
+        fi
     fi
 fi
 
