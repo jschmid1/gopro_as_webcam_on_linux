@@ -146,7 +146,7 @@ sudo apt install ffmpeg v4l2loopback-dkms curl vlc
 Traffic on port `8554/udp` of the webcam network interface must be enabled
 e.g. with `firewalld`:
 
-``` sh
+```sh
 sudo firewall-cmd --add-port 8554/udp
 sudo firewall-cmd --add-port 8554/udp --permanent
 ```

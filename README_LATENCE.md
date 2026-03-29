@@ -40,10 +40,7 @@ Cable quality, USB port choice, camera firmware, OBS settings, and host load can
 sudo gopro webcam -a -n
 ```
 
-<video width="640" height="480" controls>
-  <source src="/examples/1.mp4" type="video/mp4">
-  Votre navigateur ne supporte pas la balise vidéo.
-</video>
+[Example video: Default settings with noticeable delay](examples/1.mp4)
 
 ### Running the GoPro with a low-latency FFmpeg tuning pass and adjusting the OBS sync gives much better results:
 
@@ -51,10 +48,7 @@ sudo gopro webcam -a -n
 sudo ./start_gopro_lowlatency.sh
 ```
 
-<video width="640" height="480" controls>
-  <source src="/examples/2.mp4" type="video/mp4">
-  Votre navigateur ne supporte pas la balise vidéo.
-</video>
+[Example video: Low-latency setup with better sync](examples/2.mp4)
 
 ### The second setup is much more responsive and the audio is in sync, making it suitable for live streaming or video conferencing.
 
@@ -62,7 +56,4 @@ sudo ./start_gopro_lowlatency.sh
 sudo ./start_gopro_lowlatency.sh
 ```
 
-<video width="640" height="480" controls>
-  <source src="/examples/3.mp4" type="video/mp4">
-  Votre navigateur ne supporte pas la balise vidéo.
-</video>
+[Example video: Optimized setup for live streaming](examples/3.mp4)

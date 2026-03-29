@@ -15,12 +15,19 @@ echo -e "${YELLOW}Stopping the GoPro webcam...${NC}\n"
 if pkill -f "ffmpeg.*8554"; then
     echo -e "${GREEN}✓ FFmpeg stopped${NC}"
 else
-    echo -e "${YELLOW}! No FFmpeg process found${NC}"
+    # Check if we need sudo (FFmpeg might be owned by root)
+    if pgrep -f "ffmpeg.*8554" > /dev/null 2>&1; then
+        echo -e "${RED}✗ FFmpeg process found but couldn't stop it${NC}"
+        echo -e "${YELLOW}  Try running this script with sudo:${NC}"
+        echo -e "${YELLOW}  sudo $0${NC}"
+    else
+        echo -e "${YELLOW}! No FFmpeg process found${NC}"
+    fi
 fi
 
 # Send the STOP command to the GoPro if possible
-# Look for the GoPro interface
-DEV=$(ip -4 token | grep -v "^lo" | tail -1 | sed -e 's/token :: dev//' | sed -e 's/^[[:space:]]*//')
+# Look for the GoPro interface (skip loopback)
+DEV=$(ip -4 token | grep -v "dev lo$" | tail -1 | sed -e 's/token :: dev//' | sed -e 's/^[[:space:]]*//')
 
 if [ ! -z "$DEV" ]; then
     IP=$(ip -4 addr show dev ${DEV} 2>/dev/null | grep -Po '(?<=inet )[\d.]+' | head -1)
