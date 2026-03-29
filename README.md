@@ -37,12 +37,12 @@ Options:
                            THIS OPTION IS NOT SUITABLE FOR AUTOMATION!
 
   -r,  --resolution        select the resolution you would like the GoPro to output. "1080", "720", or "480."
-  
+
   -f,  --fov               select the FOV you would like to use. "wide", "linear", or "narrow."
 
   -i,  --ip                provide a IPv4 address to the GoPro i.e. (172.27.187.52)
                            CAUTION! This may change over time.
-  
+
   -a,  --auto-start        automatically start ffmpeg to serve the GoPro as a video device to your operating system.
                            If this flag is omitted, print the corresponding command to run it yourself.
 
@@ -142,9 +142,11 @@ Also the udev rule currently only works for HERO8 BLACK. The rules in the file c
 ```sh
 sudo apt install ffmpeg v4l2loopback-dkms curl vlc
 ```
+
 Traffic on port `8554/udp` of the webcam network interface must be enabled
 e.g. with `firewalld`:
-```
+
+``` sh
 sudo firewall-cmd --add-port 8554/udp
 sudo firewall-cmd --add-port 8554/udp --permanent
 ```
@@ -154,7 +156,18 @@ If your distribution doesn't provide `v4l2loopback-dkms` you may get it from htt
 ## Troubleshooting
 
 ### I can't find the network device for my GoPro
+
 Double check that the USB connection mode is GoPro Connect and not MTP under Preferences -> Connections -> USB Connection. If that options doesn't exist, you likely need a firmware upgrade. Instructions can be found at https://gopro.com/en/us/update.
+
+### Low-latency OBS setup
+
+If you are using OBS Studio with a GoPro and a separate microphone, see `README_LATENCE.md` for a practical low-latency setup based on real-world testing.
+
+That document includes:
+
+- an FFmpeg tuning pass for lower latency,
+- an OBS sync workflow,
+- and a tested example configuration on Fedora 42 with a GoPro HERO9 and a Rode NT USB+, where an audio offset of **133 ms** gave good sync.
 
 ## Release History
 
@@ -173,7 +186,6 @@ Credits go to https://github.com/KonradIT for a comprehensive documentation and 
 If you found the utility helpful you can buy me a cup of coffee using
 
 [![Donate](https://www.paypalobjects.com/webstatic/en_US/i/btn/png/silver-pill-paypal-44px.png)](https://www.paypal.com/donate?hosted_button_id=MKPX7GG6MMER8)
-
 
 ## Contributing
 
