@@ -170,6 +170,20 @@ The tray icon will appear in your system tray with the following options:
 - **View Logs** - Opens a live log viewer window
 - **Quit** - Stops the webcam (if running) and exits the tray
 
+### Start on login
+
+To have the tray indicator start automatically when you log in:
+
+```sh
+cp /usr/share/applications/gopro-webcam.desktop ~/.config/autostart/
+```
+
+To disable it, simply remove the file:
+
+```sh
+rm ~/.config/autostart/gopro-webcam.desktop
+```
+
 ## Dependencies
 
 ```sh
