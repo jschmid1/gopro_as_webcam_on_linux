@@ -25,12 +25,18 @@ if [ $EUID -ne 0 ]; then
 fi
 
 install -D ./gopro /usr/local/sbin/gopro
+install -D ./gopro-tray /usr/local/bin/gopro-tray
+install -D -m 644 ./gopro-webcam.desktop /usr/share/applications/gopro-webcam.desktop
 
 yellow "**********************"
 printf "\n\n"
 green "The GoPro install script succeeded"
 green "Run with with: "
 green "sudo gopro"
+printf "\n"
+green "For the system tray GUI, install optional dependencies:"
+green "  sudo apt install gir1.2-ayatanaappindicator3-0.1 zenity"
+green "Then run: gopro-tray"
 printf "\n\n"
 yellow "**********************"
 

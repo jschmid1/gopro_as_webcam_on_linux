@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=GoPro Webcam
+Comment=Start/Stop GoPro as a webcam
+Exec=gopro-tray
+Icon=camera-video
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;
+StartupNotify=false
+StartupWMClass=gopro-webcam
+NoDisplay=true
