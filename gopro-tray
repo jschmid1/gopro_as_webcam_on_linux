@@ -1,0 +1,402 @@
+#!/usr/bin/env python3
+"""GoPro Webcam system tray indicator for Linux (GNOME/Ubuntu)."""
+
+import gi
+import os
+import subprocess
+import signal
+import tempfile
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("AyatanaAppIndicator3", "0.1")
+from gi.repository import Gtk, AyatanaAppIndicator3, GLib
+
+GOPRO_CMD = ["gopro", "webcam", "-a", "-n"]
+ICON_DIR = "/usr/share/icons/Adwaita/symbolic/devices"
+ICON_NAME = "camera-video-symbolic"
+DETECT_PATTERN = "ffmpeg.*v4l2.*video"
+LOG_FILE = os.path.join(tempfile.gettempdir(), "gopro-webcam.log")
+
+# Pulsing label states
+PULSE_LABELS = [" \u25cf REC", " \u25cb REC"]  # ● REC / ○ REC
+
+
+def _gopro_is_running():
+    result = subprocess.run(
+        ["pgrep", "-f", DETECT_PATTERN],
+        capture_output=True, text=True,
+    )
+    return result.returncode == 0
+
+
+def _find_gopro_ip():
+    """Find the GoPro's control IP (x.x.x.51). Returns None if not found."""
+    result = subprocess.run(
+        ["bash", "-c",
+         "ip -4 addr show | grep -oP '(?<=inet )172\\.\\d+\\.\\d+\\.\\d+' | head -1"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    ip = result.stdout.strip()
+    parts = ip.split(".")
+    return f"{parts[0]}.{parts[1]}.{parts[2]}.51"
+
+
+def _gopro_is_connected():
+    """Check if GoPro is connected and responsive."""
+    gopro_ip = _find_gopro_ip()
+    error_msg = (
+        "GoPro not detected.\n\n"
+        "Please check that:\n"
+        "  - It is connected via USB\n"
+        "  - It is powered on (charger icon on screen)\n"
+        "  - USB mode is set to GoPro Connect (not MTP)"
+    )
+    if not gopro_ip:
+        return False, error_msg
+    try:
+        result = subprocess.run(
+            ["curl", "-s", "--connect-timeout", "2", f"http://{gopro_ip}/"],
+            capture_output=True, text=True, timeout=4,
+        )
+        if result.returncode != 0:
+            return False, error_msg
+    except subprocess.TimeoutExpired:
+        return False, error_msg
+    return True, None
+
+
+def _sudo_has_cached_credentials():
+    """Check if sudo credentials are cached (no password needed)."""
+    result = subprocess.run(
+        ["sudo", "-n", "true"],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
+def _get_sudo_password():
+    if _sudo_has_cached_credentials():
+        return ""
+    for attempt in range(3):
+        title = "GoPro Webcam"
+        if attempt > 0:
+            title = "GoPro Webcam - Wrong password"
+        result = subprocess.run(
+            ["zenity", "--password", "--title=" + title],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            return None
+        password = result.stdout.strip()
+        spinner = subprocess.Popen(
+            ["zenity", "--progress", "--title=GoPro Webcam",
+             "--text=Verifying...", "--pulsate", "--auto-close", "--no-cancel"],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        check = subprocess.run(
+            ["timeout", "1.5", "sudo", "-S", "true"],
+            input=password + "\n",
+            capture_output=True, text=True,
+        )
+        _close_zenity(spinner)
+        if check.returncode == 0:
+            return password
+    return None
+
+
+def _close_zenity(proc):
+    try:
+        proc.stdin.close()
+        proc.wait(timeout=2)
+    except Exception:
+        proc.kill()
+
+
+def _run_as_root(cmd, password, log_fh=None):
+    proc = subprocess.Popen(
+        ["sudo", "-S", "bash", "-c", cmd],
+        stdin=subprocess.PIPE,
+        stdout=log_fh or subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    if password is not None and password != "":
+        proc.stdin.write((password + "\n").encode())
+        proc.stdin.flush()
+    return proc
+
+
+def _kill_gopro_processes(password):
+    proc = _run_as_root(
+        "pkill -9 -f 'ffmpeg.*v4l2' 2>/dev/null; "
+        "pkill -9 -f 'gopro webcam' 2>/dev/null; "
+        "sleep 1",
+        password,
+    )
+    proc.wait(timeout=10)
+
+
+class LogWindow(Gtk.Window):
+    """Live log viewer that polls the log file."""
+
+    def __init__(self):
+        super().__init__(title="GoPro Webcam - Logs")
+        self.set_default_size(700, 400)
+
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+        self._textview = Gtk.TextView()
+        self._textview.set_editable(False)
+        self._textview.set_monospace(True)
+
+        scroll.add(self._textview)
+        self.add(scroll)
+
+        self._last_size = 0
+        self._poll_id = None
+        self.connect("destroy", self._on_destroy)
+
+    def start(self):
+        self._refresh()
+        self.show_all()
+        self._poll_id = GLib.timeout_add(500, self._refresh)
+
+    def _refresh(self):
+        try:
+            size = os.path.getsize(LOG_FILE)
+        except FileNotFoundError:
+            return True
+        if size != self._last_size:
+            try:
+                with open(LOG_FILE, "r") as f:
+                    content = f.read()
+            except FileNotFoundError:
+                return True
+            buf = self._textview.get_buffer()
+            buf.set_text(content)
+            self._last_size = size
+            GLib.idle_add(
+                lambda: self._textview.scroll_to_iter(
+                    buf.get_end_iter(), 0, False, 0, 0
+                )
+            )
+        return True
+
+    def _on_destroy(self, _widget):
+        if self._poll_id is not None:
+            GLib.source_remove(self._poll_id)
+            self._poll_id = None
+
+
+class GoProTray:
+    def __init__(self):
+        self.process = None
+        self._log_fh = None
+        self._password = None
+        self._pulse_id = None
+        self._pulse_state = 0
+
+        self.indicator = AyatanaAppIndicator3.Indicator.new_with_path(
+            "gopro-webcam",
+            ICON_NAME,
+            AyatanaAppIndicator3.IndicatorCategory.HARDWARE,
+            ICON_DIR,
+        )
+        self.indicator.set_status(AyatanaAppIndicator3.IndicatorStatus.ACTIVE)
+        self.indicator.set_title("GoPro Webcam")
+        self._build_menu()
+
+        if _gopro_is_running():
+            self._set_active()
+
+        GLib.timeout_add_seconds(2, self._sync_state)
+
+    def _build_menu(self):
+        menu = Gtk.Menu()
+
+        self.status_item = Gtk.MenuItem(label="Status: Inactive")
+        self.status_item.set_sensitive(False)
+        menu.append(self.status_item)
+
+        menu.append(Gtk.SeparatorMenuItem())
+
+        self.toggle_item = Gtk.MenuItem(label="Start GoPro")
+        self.toggle_item.connect("activate", self._on_toggle)
+        menu.append(self.toggle_item)
+
+        menu.append(Gtk.SeparatorMenuItem())
+
+        logs_item = Gtk.MenuItem(label="View Logs")
+        logs_item.connect("activate", self._on_show_logs)
+        menu.append(logs_item)
+
+        menu.append(Gtk.SeparatorMenuItem())
+
+        quit_item = Gtk.MenuItem(label="Quit")
+        quit_item.connect("activate", self._on_quit)
+        menu.append(quit_item)
+
+        menu.show_all()
+        self.indicator.set_menu(menu)
+
+    def _sync_state(self):
+        if _gopro_is_running():
+            self._set_active()
+        else:
+            self.process = None
+            self._set_inactive()
+        return True
+
+    def _on_toggle(self, _widget):
+        if _gopro_is_running():
+            self._stop()
+        else:
+            self._start()
+
+    def _start_pulse(self):
+        if self._pulse_id is None:
+            self._pulse_state = 0
+            self._pulse_id = GLib.timeout_add(800, self._pulse_tick)
+
+    def _stop_pulse(self):
+        if self._pulse_id is not None:
+            GLib.source_remove(self._pulse_id)
+            self._pulse_id = None
+
+    def _pulse_tick(self):
+        self._pulse_state = 1 - self._pulse_state
+        self.indicator.set_label(PULSE_LABELS[self._pulse_state], "")
+        return True
+
+    def _set_active(self):
+        self.indicator.set_label(PULSE_LABELS[0], "")
+        self.status_item.set_label("Status: Active")
+        self.toggle_item.set_label("Stop GoPro")
+        self._start_pulse()
+
+    def _set_inactive(self):
+        self._stop_pulse()
+        self.indicator.set_label("", "")
+        self.status_item.set_label("Status: Inactive")
+        self.toggle_item.set_label("Start GoPro")
+
+    def _start(self):
+        connected, error_msg = _gopro_is_connected()
+        if not connected:
+            self._show_error(error_msg)
+            return
+
+        password = _get_sudo_password()
+        if password is None:
+            return
+
+        spinner = subprocess.Popen(
+            ["zenity", "--progress", "--title=GoPro Webcam",
+             "--text=Starting GoPro...", "--pulsate", "--auto-close", "--no-cancel"],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+
+        try:
+            if _gopro_is_running():
+                _kill_gopro_processes(password)
+
+            self._log_fh = open(LOG_FILE, "w")
+            self._password = password
+
+            self.process = _run_as_root(
+                "gopro webcam -a -n 2>&1",
+                password,
+                log_fh=self._log_fh,
+            )
+
+            self._spinner = spinner
+            self._activate_attempts = 0
+            GLib.timeout_add(1000, self._poll_activation)
+        except Exception as e:
+            _close_zenity(spinner)
+            self._show_error(f"Failed to start: {e}")
+
+    def _poll_activation(self):
+        self._activate_attempts += 1
+        if _gopro_is_running():
+            _close_zenity(self._spinner)
+            self._set_active()
+            return False
+        if self._activate_attempts >= 15:
+            _close_zenity(self._spinner)
+            self._show_error("Failed to start GoPro.\n\nCheck the logs for details.")
+            return False
+        return True
+
+    def _stop(self):
+        try:
+            self._send_gopro_stop()
+            if self.process and self.process.poll() is None:
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+            killed = subprocess.run(
+                ["sudo", "-n", "bash", "-c",
+                 "pkill -9 -f 'ffmpeg.*v4l2' 2>/dev/null; "
+                 "pkill -9 -f 'gopro webcam' 2>/dev/null"],
+                capture_output=True,
+            ).returncode == 0
+            if not killed and self._password is not None:
+                _kill_gopro_processes(self._password)
+            if not killed and self._password is None and _gopro_is_running():
+                password = _get_sudo_password()
+                if password is not None:
+                    _kill_gopro_processes(password)
+        except Exception:
+            pass
+        self.process = None
+        if self._log_fh:
+            self._log_fh.close()
+            self._log_fh = None
+        self._set_inactive()
+
+    def _send_gopro_stop(self):
+        try:
+            gopro_ip = _find_gopro_ip()
+            if gopro_ip:
+                subprocess.run(
+                    ["curl", "-s", "--connect-timeout", "2",
+                     f"http://{gopro_ip}/gp/gpWebcam/STOP"],
+                    capture_output=True, timeout=4,
+                )
+        except Exception:
+            pass
+
+    def _on_show_logs(self, _widget):
+        win = LogWindow()
+        win.start()
+
+    def _show_error(self, msg):
+        dialog = Gtk.MessageDialog(
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text=msg,
+        )
+        dialog.run()
+        dialog.destroy()
+
+    def _on_quit(self, _widget):
+        if _gopro_is_running():
+            self._stop()
+        Gtk.main_quit()
+
+
+def main():
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    GLib.set_prgname("gopro-webcam")
+    GLib.set_application_name("GoPro Webcam")
+    GoProTray()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

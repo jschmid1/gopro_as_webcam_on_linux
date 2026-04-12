@@ -137,6 +137,39 @@ A known issue is that the first service start fails. The second service start th
 
 Also the udev rule currently only works for HERO8 BLACK. The rules in the file can be duplicated and adapted for every new model supporting webcam mode released by GoPro in the future.
 
+## System Tray (GUI)
+
+A system tray indicator is included for easy control of the GoPro webcam from the desktop.
+
+### Features
+- Start/Stop GoPro webcam with one click
+- Pulsing `● REC` indicator when active
+- Live log viewer
+- Automatic detection of GoPro connection status
+- Password prompt via zenity (with sudo credential caching)
+
+### Additional Dependencies
+
+```sh
+sudo apt install gir1.2-ayatanaappindicator3-0.1 zenity
+```
+
+### Usage
+
+After installation, you can launch the tray indicator from the terminal:
+
+```sh
+gopro-tray
+```
+
+Or search for "GoPro Webcam" in your application launcher.
+
+The tray icon will appear in your system tray with the following options:
+- **Start GoPro** - Detects the camera, prompts for sudo password, and starts the webcam
+- **Stop GoPro** - Stops the webcam stream and tells the camera to exit webcam mode
+- **View Logs** - Opens a live log viewer window
+- **Quit** - Stops the webcam (if running) and exits the tray
+
 ## Dependencies
 
 ```sh
