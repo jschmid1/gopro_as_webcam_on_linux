@@ -52,7 +52,7 @@ Options:
 
   -V,  --verbose           echo every command that gets executed
 
-  -n,  --video-number      select the number of video device you would like to use. Default is 42. This means /dev/video42 will be created.
+  -N,  --video-number      select the number of video device you would like to use. Default is 42. This means /dev/video42 will be created.
 
   -P,  --PORT              select the port you would like to use. Default is 8554.
 
@@ -135,12 +135,18 @@ You can check the status using `systemctl` and `journalctl` as described above.
 
 A known issue is that the first service start fails. The second service start then succeeds about 10s later. This is because even the service is only started after the ethernet interface, the network is not fully initialized. The service fails then because no ip is yet available. In the second try, the network is then usually initialized.
 
-Also the udev rule currently only works for HERO8 BLACK. The rules in the file can be duplicated and adapted for every new model supporting webcam mode released by GoPro in the future.
+Also the udev rule currently only works for HERO9 BLACK. The rules in the file can be duplicated and adapted for every new model supporting webcam mode released by GoPro in the future.
 
 ## Dependencies
 
+Debian/Ubuntu:
 ```sh
 sudo apt install ffmpeg v4l2loopback-dkms curl vlc
+```
+
+Arch/CachyOS (DKMS needs the headers matching your running kernel, e.g. `linux-cachyos-headers`):
+```sh
+sudo pacman -S --needed ffmpeg curl vlc v4l2loopback-dkms linux-cachyos-headers
 ```
 Traffic on port `8554/udp` of the webcam network interface must be enabled
 e.g. with `firewalld`:

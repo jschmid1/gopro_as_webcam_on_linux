@@ -48,8 +48,8 @@ globals() {
 
 DEPS=( "ffmpeg" "curl" )
 module="v4l2loopback"
-module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro' video_nr=42"
-module_cmd_unload="modprobe -rf v4l2loopback"
+module_cmd=(modprobe v4l2loopback exclusive_caps=1 "card_label=GoPro" video_nr=42)
+module_cmd_unload=(modprobe -rf v4l2loopback)
 
 START_PATH="/gp/gpWebcam/START"
 # TODO: seems buggy atm, though
@@ -109,7 +109,7 @@ function validate_arguments {
     fi
 
     if [[ ${GOPRO_PREVIEW} -eq 1 ]] && [[ ! $GOPRO_USER ]]; then
-        red "-r | --preview needs -u | --user. Please provide it with the mentioned flags"
+        red "-v | --preview needs -u | --user. Please provide it with the mentioned flags"
         exit 1
     fi
     
@@ -125,7 +125,7 @@ function validate_arguments {
         red "Please choose either \"wide\", \"narrow\", \"superview\", or \"linear\""
         exit 1
     fi
-    module_cmd="modprobe v4l2loopback exclusive_caps=1 card_label='GoPro'$GOPRO_VIDEO_NUMBER video_nr=$GOPRO_VIDEO_NUMBER"
+    module_cmd=(modprobe v4l2loopback exclusive_caps=1 "card_label=GoPro" video_nr="$GOPRO_VIDEO_NUMBER")
     
     if [[ ${GOPRO_RESOLUTION} -ne "1080" && ${GOPRO_RESOLUTION} -ne "720" && ${GOPRO_RESOLUTION} -ne "480" ]]; then
         red "Please choose either \"1080\", \"720\", or \"480\""
@@ -165,7 +165,7 @@ Options:
 
   -V,  --verbose           echo every command that gets executed
 
-  -n,  --video-number      select the number of video device you would like to use. Default is 42.
+  -N,  --video-number      select the number of video device you would like to use. Default is 42.
 
   -P,  --PORT              select the port you would like to use. Default is 8554.
 
@@ -227,7 +227,7 @@ function parse_args {
         DEPS+=('vlc')
         GOPRO_PREVIEW=1
         ;;
-      -n|--video-number)
+      -N|--video-number)
         GOPRO_VIDEO_NUMBER=$2
         shift
         ;;
@@ -277,7 +277,7 @@ function user_confirmation {
 
 function test_module_probe {
     # load module
-    if ${module_cmd} &> /dev/null ; then
+    if "${module_cmd[@]}" &> /dev/null ; then
         green "${module} was successfully loaded."
         return 0
     else
@@ -288,12 +288,12 @@ function test_module_probe {
 
 function test_module_unload {
     # unload module
-    if ${module_cmd_unload} &> /dev/null ; then
+    if "${module_cmd_unload[@]}" &> /dev/null ; then
         green "${module} was unloaded successfully."
         return 0
     else
-        red "${module} could not be unloaded. There is maybe an ffmpeg(or similar) running that uses this module"
-        exit 1
+        yellow "${module} could not be unloaded (in use by a browser or ffmpeg?). Reusing the loaded module."
+        return 0
     fi
 
 }
@@ -318,7 +318,18 @@ function discover_device {
         echo "I can only make an uneducated guess wrt the name of the interface that the GoPro exposes."
         echo "For me the name of the interface is 'enxf64854ee7472'. This script will try to discover the device"
         echo "that was added *last*, as you just plugged in the camera, hence the interface added last should be the one we're looking for."
-        dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | tail -1 | xargs)
+        # GoPro's USB vendor id is 2672: look for a network interface backed by such a USB device
+        for iface in /sys/class/net/*; do
+            if [[ "$(cat "$(readlink -f "$iface/device" 2>/dev/null)/../idVendor" 2>/dev/null)" == "2672" ]]; then
+                dev=$(basename "$iface")
+            fi
+        done
+        if [[ -z ${dev} ]]; then
+            dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | xargs -n1 | grep '^enx' | tail -1)
+        fi
+        if [[ -z ${dev} ]]; then
+            dev=$(ip -4 --oneline link | grep -v "state DOWN" | grep -v LOOPBACK | grep -v "NO-CARRIER" | cut -f2 -d":" | tail -1 | xargs)
+        fi
 
     else
         echo "Using provided device pattern ${GOPRO_DEVICE_PATTERN}"
@@ -342,7 +353,12 @@ function find_gopro_ip {
 
     if [[ ! ${GOPRO_IP} ]]; then
         yellow "Using ${GOPRO_DEVICE} to discover the GOPRO_IP."
-        ip=$(ip -4 addr show dev ${GOPRO_DEVICE} | grep -Po '(?<=inet )[\d.]+')
+        # the camera hands out its IP via DHCP, which can take a few seconds
+        for _ in $(seq 1 20); do
+            ip=$(ip -4 addr show dev ${GOPRO_DEVICE} | grep -Po '(?<=inet )[\d.]+')
+            [[ -n ${ip} ]] && break
+            sleep 1
+        done
         if [[ -z ${ip} ]]; then
             red "Could not automatically discover a valid GOPRO_IP. Use the '-p, -d or -i' option to provide more information. (see --help for more information)"
             exit 1
@@ -412,7 +428,7 @@ function expose_device {
         if [ -n "${GOPRO_CROP}" ]; then
             CROP=",crop=${GOPRO_CROP}"
         fi
-        ffmpeg -nostdin -threads 1 -i "udp://@0.0.0.0:${GOPRO_PORT}?overrun_nonfatal=1&fifo_size=50000000" -f:v mpegts -fflags nobuffer -vf format="yuv420p${CROP}" -f v4l2 /dev/video${GOPRO_VIDEO_NUMBER}
+        ffmpeg -nostdin -threads 1 -fflags nobuffer+discardcorrupt -flags low_delay -probesize 65536 -analyzeduration 0 -f mpegts -i "udp://@0.0.0.0:${GOPRO_PORT}?overrun_nonfatal=1&fifo_size=5000000" -an -vf format="yuv420p${CROP}" -fps_mode passthrough -f v4l2 /dev/video${GOPRO_VIDEO_NUMBER}
     elif [[ ${GOPRO_PREVIEW} -eq 1 ]]; then
         echo "Starting preview.."
         start_preview
@@ -453,6 +469,9 @@ main() {
     webcam)
         # check if sudo/root
         permission_check
+
+        # bail out early if ffmpeg/curl/(vlc) are missing
+        test_DEPS
 
         # If module is loaded already, unload it, to maintain idempotency.
         test_module_loaded
